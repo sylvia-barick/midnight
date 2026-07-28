@@ -1,11 +1,11 @@
-# Midnight Bulletin Board (Level 2 dApp)
+# Midnight Bulletin Board 
 
 A premium, privacy-first bulletin board application built on the **Midnight Network** utilizing zero-knowledge proofs. Users can connect their **Lace Wallet** to post public messages on-chain, while privately proving ownership of their posts using a local browser ZK prover without exposing their secret keys or signatures.
 
 ---
 
 ## Live Demo & Resources
-- **Frontend Live URL**: [https://midnight-level2-bboard.vercel.app](https://midnight-level2-bboard.vercel.app)
+- **Frontend Live URL**: [https://midnight-theta-two.vercel.app/](https://midnight-theta-two.vercel.app/)
 - **Github Repo**: [https://github.com/sylvia-barick/midnight.git](https://github.com/sylvia-barick/midnight)
 - **Demo Video**: [https://drive.google.com/drive/folders/1VdZkEbYkubP3RYzzeJVh_Utx4k1CCuij?usp=sharing](https://drive.google.com/drive/folders/1VdZkEbYkubP3RYzzeJVh_Utx4k1CCuij?usp=sharing)
 - **Preprod Contract Address**: `0200dbf964f541e1950883f5b2f539b66fd6111e46ce8e6e9551fbdd180114d5dd5b`
