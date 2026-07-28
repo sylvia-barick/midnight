@@ -6,7 +6,7 @@ A premium, privacy-first bulletin board application built on the **Midnight Netw
 
 ## Live Demo & Resources
 - **Frontend Live URL**: [https://midnight-theta-two.vercel.app/](https://midnight-theta-two.vercel.app/)
-- **Github Repo**: [https://github.com/sylvia-barick/midnight.git](https://github.com/sylvia-barick/midnight)
+- **Github Repo**: [https://github.com/sylvia-barick/midnight](https://github.com/sylvia-barick/midnight)
 - **Demo Video**: [https://drive.google.com/drive/folders/1VdZkEbYkubP3RYzzeJVh_Utx4k1CCuij?usp=sharing](https://drive.google.com/drive/folders/1VdZkEbYkubP3RYzzeJVh_Utx4k1CCuij?usp=sharing)
 - **Preprod Contract Address**: `0200dbf964f541e1950883f5b2f539b66fd6111e46ce8e6e9551fbdd180114d5dd5b`
 - **Network**: `Midnight Preprod`
