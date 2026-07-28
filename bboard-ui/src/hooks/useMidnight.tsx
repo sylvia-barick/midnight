@@ -9,14 +9,11 @@ import { inMemoryPrivateStateProvider } from '../in-memory-private-state-provide
 import { BBoardPrivateState, createBBoardPrivateState } from '../../../contract/src/witnesses';
 import { bboardPrivateStateKey } from '../../../api/src/common-types';
 import { NetworkId } from '@midnight-ntwrk/midnight-js-network-id';
-import { type Observable, firstValueFrom, interval, throwError } from 'rxjs';
-import { map, filter, take, timeout, concatMap, tap, catchError } from 'rxjs/operators';
-import { pipe as fnPipe } from 'fp-ts/function';
-import semver from 'semver';
 import { logger } from '../main';
 import { type FinalizedTransaction, Transaction, SignatureEnabled, Proof, Binding, TransactionId } from '@midnight-ntwrk/midnight-js-protocol/ledger';
 import type { UnboundTransaction } from '@midnight-ntwrk/midnight-js-types';
 import * as utils from '../../../api/src/utils/index';
+import semver from 'semver';
 
 const COMPATIBLE_CONNECTOR_API_VERSION = '4.x';
 
@@ -28,7 +25,7 @@ export interface MidnightContextType {
   network: NetworkId | null;
   connectionStatus: WalletConnectionStatus;
   walletError: string | null;
-  connectWallet: () => Promise<void>;
+  connectWallet: () => Promise<ConnectedAPI>;
   disconnectWallet: () => void;
 
   // Contract state
@@ -76,20 +73,10 @@ export const MidnightProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [connectedAPI, setConnectedAPI] = useState<ConnectedAPI | null>(null);
   const [deployedAPI, setDeployedAPI] = useState<DeployedBBoardAPI | null>(null);
 
-  // Restore wallet session if possible
-  useEffect(() => {
-    const savedAddress = localStorage.getItem('midnight_wallet_address');
-    const savedNetwork = localStorage.getItem('midnight_network');
-    if (savedAddress && savedNetwork) {
-      setWalletAddress(savedAddress);
-      setNetwork(savedNetwork as NetworkId);
-      setConnectionStatus('connected');
-    }
-  }, []);
-
   const disconnectWallet = useCallback(() => {
     localStorage.removeItem('midnight_wallet_address');
     localStorage.removeItem('midnight_network');
+    localStorage.removeItem('midnight_contract_address');
     setWalletAddress(null);
     setNetwork(null);
     setConnectionStatus('disconnected');
@@ -109,66 +96,47 @@ export const MidnightProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const targetNetwork = (import.meta.env.VITE_NETWORK_ID || 'preprod') as NetworkId;
 
     try {
-      const api = await firstValueFrom(
-        fnPipe(
-          interval(100),
-          map(() => getFirstCompatibleWallet()),
-          tap((connectorAPI) => {
-            logger.info(connectorAPI, 'Check for wallet connector API');
-          }),
-          filter((connectorAPI): connectorAPI is InitialAPI => !!connectorAPI),
-          tap((connectorAPI) => {
-            logger.info(connectorAPI, 'Compatible wallet connector API found. Connecting.');
-          }),
-          take(1),
-          timeout({
-            first: 2000,
-            with: () =>
-              throwError(() => {
-                logger.error('Could not find wallet connector API');
-                return new Error('Midnight Lace wallet not installed. Please install the browser extension.');
-              }),
-          }),
-          concatMap(async (initialAPI) => {
-            try {
-              const connectedAPI = await initialAPI.connect(targetNetwork);
-              return connectedAPI;
-            } catch (e) {
-              logger.error(e, 'User rejected or error connecting to wallet');
-              throw new Error('Wallet connection rejected by user.');
-            }
-          }),
-          timeout({
-            first: 10000,
-            with: () =>
-              throwError(() => {
-                logger.error('Wallet connector API has failed to respond');
-                return new Error('Midnight Lace wallet connection timeout. Is the extension enabled?');
-              }),
-          }),
-          catchError((error) =>
-            throwError(() => {
-              logger.error('Unable to enable connector API' + error);
-              return error instanceof Error ? error : new Error(String(error));
-            })
-          )
-        )
-      );
+      // 1. Wait for window.midnight to be injected (up to 2 seconds)
+      let wallet: InitialAPI | undefined = undefined;
+      for (let i = 0; i < 20; i++) {
+        wallet = getFirstCompatibleWallet();
+        if (wallet) break;
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
 
+      if (!wallet) {
+        throw new Error('Midnight Lace wallet not detected. Please ensure the extension is installed and enabled.');
+      }
+
+      // 2. Connect to the target network
+      let api: ConnectedAPI;
+      try {
+        api = await wallet.connect(targetNetwork);
+      } catch (connectErr: any) {
+        logger.error(connectErr, 'Error connecting to wallet');
+        // Check if user rejected or network mismatch
+        if (connectErr.message && connectErr.message.toLowerCase().includes('network')) {
+          throw new Error(`Network Mismatch: Please check your Lace Wallet configuration and ensure network is set to ${targetNetwork}.`);
+        }
+        throw new Error(connectErr.message || 'Lace Wallet connection was rejected or failed.');
+      }
+
+      // 3. Retrieve shielded key and settings
       const shieldedAddresses = await api.getShieldedAddresses();
-      const walletConfig = await api.getConfiguration();
-
+      
       setConnectedAPI(api);
       setWalletAddress(shieldedAddresses.shieldedCoinPublicKey);
       setNetwork(targetNetwork);
       setConnectionStatus('connected');
       
-      // Save session
+      // Save session info
       localStorage.setItem('midnight_wallet_address', shieldedAddresses.shieldedCoinPublicKey);
       localStorage.setItem('midnight_network', targetNetwork);
+      return api;
     } catch (err: any) {
       setConnectionStatus('disconnected');
       setWalletError(err.message || 'Unknown wallet connection error');
+      logger.error(err, 'Failed to connect wallet');
       throw err;
     }
   }, []);
@@ -227,7 +195,7 @@ export const MidnightProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, []);
 
   const resolveContract = useCallback(async (address?: string) => {
-    if (connectionStatus !== 'connected' || !connectedAPI) {
+    if (!connectedAPI) {
       throw new Error('Please connect your Lace wallet first.');
     }
 
@@ -248,13 +216,44 @@ export const MidnightProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
       setDeployedAPI(api);
       setContractAddress(api.deployedContractAddress);
+      localStorage.setItem('midnight_contract_address', api.deployedContractAddress);
     } catch (err: any) {
       setTxError(err.message || 'Error deploying/joining contract');
       throw err;
     } finally {
       setIsWorking(false);
     }
-  }, [connectedAPI, connectionStatus, getProviders]);
+  }, [connectedAPI, getProviders]);
+
+  // Restore wallet session & active contract connection on reload
+  useEffect(() => {
+    const savedAddress = localStorage.getItem('midnight_wallet_address');
+    if (savedAddress) {
+      connectWallet()
+        .then((api) => {
+          const savedContract = localStorage.getItem('midnight_contract_address');
+          if (savedContract && api) {
+            // Re-resolve/join contract in the background
+            setIsWorking(true);
+            getProviders(api)
+              .then((providers) => BBoardAPI.join(providers, savedContract, logger))
+              .then((apiInstance) => {
+                setDeployedAPI(apiInstance);
+                setContractAddress(apiInstance.deployedContractAddress);
+              })
+              .catch((err) => {
+                logger.error(err, 'Failed to auto-restore contract session');
+              })
+              .finally(() => {
+                setIsWorking(false);
+              });
+          }
+        })
+        .catch((err) => {
+          logger.error(err, 'Failed to auto-reconnect wallet');
+        });
+    }
+  }, []);
 
   // Subscribe to contract state changes
   useEffect(() => {

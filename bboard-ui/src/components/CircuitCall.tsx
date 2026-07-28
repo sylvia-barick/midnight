@@ -28,7 +28,7 @@ export const CircuitCall: React.FC = () => {
   } = useMidnight();
 
   const [messageInput, setMessageInput] = useState('');
-  const [joinAddress, setJoinAddress] = useState('');
+  const [joinAddress, setJoinAddress] = useState('0200dbf964f541e1950883f5b2f539b66fd6111e46ce8e6e9551fbdd180114d5dd5b');
   const [isCopied, setIsCopied] = useState(false);
 
   const isConnected = connectionStatus === 'connected';
