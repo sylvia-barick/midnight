@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "outputDirectory": "bboard-ui/dist",
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

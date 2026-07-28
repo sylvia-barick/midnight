@@ -6,7 +6,8 @@ A premium, privacy-first bulletin board application built on the **Midnight Netw
 
 ## Live Demo & Resources
 - **Frontend Live URL**: [https://midnight-level2-bboard.vercel.app](https://midnight-level2-bboard.vercel.app)
-- **Demo Video**: [https://youtu.be/demo-video-placeholder](https://youtu.be/demo-video-placeholder)
+- **Github Repo**: [https://github.com/sylvia-barick/midnight.git](https://github.com/sylvia-barick/midnight)
+- **Demo Video**: [https://drive.google.com/drive/folders/1VdZkEbYkubP3RYzzeJVh_Utx4k1CCuij?usp=sharing](https://drive.google.com/drive/folders/1VdZkEbYkubP3RYzzeJVh_Utx4k1CCuij?usp=sharing)
 - **Preprod Contract Address**: `0200dbf964f541e1950883f5b2f539b66fd6111e46ce8e6e9551fbdd180114d5dd5b`
 - **Network**: `Midnight Preprod`
 
@@ -121,7 +122,7 @@ sequenceDiagram
 ### 1. Clone & Setup
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/midnight-level2-bboard.git
+git clone https://github.com/sylvia-barick/midnight.git
 git checkout master
 
 # Install dependencies for the monorepo
