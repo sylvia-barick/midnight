@@ -2,6 +2,12 @@
 
 A premium, privacy-first bulletin board application built on the **Midnight Network** utilizing zero-knowledge proofs. Users can connect their **Lace Wallet** to post public messages on-chain, while privately proving ownership of their posts using a local browser ZK prover without exposing their secret keys or signatures.
 
+
+---
+
+## Initial Product Idea
+The Midnight Bulletin Board is a decentralized, privacy-preserving messaging portal that allows organizations and developers to post announcements, security updates, or status alerts to a public ledger while keeping the publisher's real on-chain identity completely hidden. By utilizing local zero-knowledge proofs, the publisher can dynamically delete or manage their posts, proving ownership using a private secret key locally in the browser without ever disclosing their master wallet address or shielded key material, shielding authors from targeted tracking, tracking correlation, or censorship.
+
 ---
 
 ## Live Demo & Resources
