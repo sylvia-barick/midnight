@@ -1,13 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { type ContractAddress, toHex, fromHex } from '@midnight-ntwrk/midnight-js-protocol/compact-runtime';
-import { type BBoardDerivedState, type DeployedBBoardAPI, BBoardAPI, type BBoardProviders, type BBoardCircuitKeys } from '../../../api/src/index';
+import { type VotingDerivedState, type DeployedVotingAPI, VotingAPI, type VotingProviders, type VotingCircuitKeys } from '../../../api/src/index';
+import { Choice } from '../../../contract/src/index';
 import { ConnectedAPI, type InitialAPI } from '@midnight-ntwrk/dapp-connector-api';
 import { FetchZkConfigProvider } from '@midnight-ntwrk/midnight-js-fetch-zk-config-provider';
 import { httpClientProofProvider } from '@midnight-ntwrk/midnight-js-http-client-proof-provider';
 import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-public-data-provider';
 import { inMemoryPrivateStateProvider } from '../in-memory-private-state-provider';
-import { BBoardPrivateState, createBBoardPrivateState } from '../../../contract/src/witnesses';
-import { bboardPrivateStateKey } from '../../../api/src/common-types';
+import { VotingPrivateState, createVotingPrivateState } from '../../../contract/src/witnesses';
+import { votingPrivateStateKey } from '../../../api/src/common-types';
 import { NetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 import { logger } from '../main';
 import { type FinalizedTransaction, Transaction, SignatureEnabled, Proof, Binding, TransactionId } from '@midnight-ntwrk/midnight-js-protocol/ledger';
@@ -35,12 +36,11 @@ export interface MidnightContextType {
   txHash: string | null;
   txSuccess: boolean | null;
   txError: string | null;
-  boardState: BBoardDerivedState | null;
+  votingState: VotingDerivedState | null;
 
   // Contract actions
-  resolveContract: (address?: string) => Promise<void>;
-  postMessage: (message: string) => Promise<void>;
-  takeDownMessage: () => Promise<void>;
+  resolveContract: (descriptionOrAddress?: string) => Promise<void>;
+  castVote: (choice: Choice) => Promise<void>;
 }
 
 const MidnightContext = createContext<MidnightContextType | undefined>(undefined);
@@ -68,10 +68,10 @@ export const MidnightProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [txHash, setTxHash] = useState<string | null>(null);
   const [txSuccess, setTxSuccess] = useState<boolean | null>(null);
   const [txError, setTxError] = useState<string | null>(null);
-  const [boardState, setBoardState] = useState<BBoardDerivedState | null>(null);
+  const [votingState, setVotingState] = useState<VotingDerivedState | null>(null);
 
   const [connectedAPI, setConnectedAPI] = useState<ConnectedAPI | null>(null);
-  const [deployedAPI, setDeployedAPI] = useState<DeployedBBoardAPI | null>(null);
+  const [deployedAPI, setDeployedAPI] = useState<DeployedVotingAPI | null>(null);
 
   const disconnectWallet = useCallback(() => {
     localStorage.removeItem('midnight_wallet_address');
@@ -84,7 +84,7 @@ export const MidnightProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setConnectedAPI(null);
     setDeployedAPI(null);
     setContractAddress(null);
-    setBoardState(null);
+    setVotingState(null);
     setTxHash(null);
     setTxSuccess(null);
     setTxError(null);
@@ -96,7 +96,6 @@ export const MidnightProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const targetNetwork = (import.meta.env.VITE_NETWORK_ID || 'preprod') as NetworkId;
 
     try {
-      // 1. Wait for window.midnight to be injected (up to 2 seconds)
       let wallet: InitialAPI | undefined = undefined;
       for (let i = 0; i < 20; i++) {
         wallet = getFirstCompatibleWallet();
@@ -108,20 +107,17 @@ export const MidnightProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         throw new Error('Midnight Lace wallet not detected. Please ensure the extension is installed and enabled.');
       }
 
-      // 2. Connect to the target network
       let api: ConnectedAPI;
       try {
         api = await wallet.connect(targetNetwork);
       } catch (connectErr: any) {
         logger.error(connectErr, 'Error connecting to wallet');
-        // Check if user rejected or network mismatch
         if (connectErr.message && connectErr.message.toLowerCase().includes('network')) {
           throw new Error(`Network Mismatch: Please check your Lace Wallet configuration and ensure network is set to ${targetNetwork}.`);
         }
         throw new Error(connectErr.message || 'Lace Wallet connection was rejected or failed.');
       }
 
-      // 3. Retrieve shielded key and settings
       const shieldedAddresses = await api.getShieldedAddresses();
       
       setConnectedAPI(api);
@@ -129,7 +125,6 @@ export const MidnightProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setNetwork(targetNetwork);
       setConnectionStatus('connected');
       
-      // Save session info
       localStorage.setItem('midnight_wallet_address', shieldedAddresses.shieldedCoinPublicKey);
       localStorage.setItem('midnight_network', targetNetwork);
       return api;
@@ -141,15 +136,15 @@ export const MidnightProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, []);
 
-  const getProviders = useCallback(async (api: ConnectedAPI): Promise<BBoardProviders> => {
+  const getProviders = useCallback(async (api: ConnectedAPI): Promise<VotingProviders> => {
     const zkConfigPath = window.location.origin;
-    const keyMaterialProvider = new FetchZkConfigProvider<BBoardCircuitKeys>(zkConfigPath, fetch.bind(window));
+    const keyMaterialProvider = new FetchZkConfigProvider<VotingCircuitKeys>(zkConfigPath, fetch.bind(window));
     const config = await api.getConfiguration();
-    const inMemoryBBoardPrivateStateProvider = inMemoryPrivateStateProvider<string, BBoardPrivateState>();
+    const inMemoryVotingPrivateStateProvider = inMemoryPrivateStateProvider<string, VotingPrivateState>();
     const shieldedAddresses = await api.getShieldedAddresses();
 
     return {
-      privateStateProvider: inMemoryBBoardPrivateStateProvider,
+      privateStateProvider: inMemoryVotingPrivateStateProvider,
       zkConfigProvider: keyMaterialProvider,
       proofProvider: httpClientProofProvider(config.proverServerUri!, keyMaterialProvider),
       publicDataProvider: indexerPublicDataProvider(config.indexerUri, config.indexerWsUri),
@@ -194,7 +189,7 @@ export const MidnightProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
   }, []);
 
-  const resolveContract = useCallback(async (address?: string) => {
+  const resolveContract = useCallback(async (descriptionOrAddress?: string) => {
     if (!connectedAPI) {
       throw new Error('Please connect your Lace wallet first.');
     }
@@ -206,12 +201,13 @@ export const MidnightProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     try {
       const providers = await getProviders(connectedAPI);
-      let api: DeployedBBoardAPI;
+      let api: DeployedVotingAPI;
 
-      if (address) {
-        api = await BBoardAPI.join(providers, address, logger);
+      if (descriptionOrAddress && descriptionOrAddress.length > 50) {
+        api = await VotingAPI.join(providers, descriptionOrAddress, logger);
       } else {
-        api = await BBoardAPI.deploy(providers, logger);
+        const desc = descriptionOrAddress || "Default Private Poll";
+        api = await VotingAPI.deploy(providers, desc, logger);
       }
 
       setDeployedAPI(api);
@@ -225,7 +221,7 @@ export const MidnightProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, [connectedAPI, getProviders]);
 
-  // Restore wallet session & active contract connection on reload
+  // Restore session
   useEffect(() => {
     const savedAddress = localStorage.getItem('midnight_wallet_address');
     if (savedAddress) {
@@ -233,10 +229,9 @@ export const MidnightProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         .then((api) => {
           const savedContract = localStorage.getItem('midnight_contract_address');
           if (savedContract && api) {
-            // Re-resolve/join contract in the background
             setIsWorking(true);
             getProviders(api)
-              .then((providers) => BBoardAPI.join(providers, savedContract, logger))
+              .then((providers) => VotingAPI.join(providers, savedContract, logger))
               .then((apiInstance) => {
                 setDeployedAPI(apiInstance);
                 setContractAddress(apiInstance.deployedContractAddress);
@@ -255,12 +250,12 @@ export const MidnightProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, []);
 
-  // Subscribe to contract state changes
+  // Subscribe to contract changes
   useEffect(() => {
     if (!deployedAPI) return;
     const subscription = deployedAPI.state$.subscribe({
       next: (state) => {
-        setBoardState(state);
+        setVotingState(state);
       },
       error: (err) => {
         logger.error(err, 'Contract state stream error');
@@ -273,7 +268,7 @@ export const MidnightProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
   }, [deployedAPI]);
 
-  const postMessage = useCallback(async (message: string) => {
+  const castVote = useCallback(async (choice: Choice) => {
     if (!deployedAPI) throw new Error('Contract not initialized');
     setIsWorking(true);
     setTxError(null);
@@ -281,30 +276,11 @@ export const MidnightProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setTxHash(null);
 
     try {
-      await deployedAPI.post(message);
+      await deployedAPI.vote(choice);
       setTxSuccess(true);
     } catch (err: any) {
       setTxSuccess(false);
       setTxError(err.message || 'Transaction failed during circuit call');
-      throw err;
-    } finally {
-      setIsWorking(false);
-    }
-  }, [deployedAPI]);
-
-  const takeDownMessage = useCallback(async () => {
-    if (!deployedAPI) throw new Error('Contract not initialized');
-    setIsWorking(true);
-    setTxError(null);
-    setTxSuccess(null);
-    setTxHash(null);
-
-    try {
-      await deployedAPI.takeDown();
-      setTxSuccess(true);
-    } catch (err: any) {
-      setTxSuccess(false);
-      setTxError(err.message || 'Transaction failed during takeDown circuit call');
       throw err;
     } finally {
       setIsWorking(false);
@@ -326,10 +302,9 @@ export const MidnightProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         txHash,
         txSuccess,
         txError,
-        boardState,
+        votingState,
         resolveContract,
-        postMessage,
-        takeDownMessage,
+        castVote,
       }}
     >
       {children}

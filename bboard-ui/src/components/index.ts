@@ -14,7 +14,6 @@
 // limitations under the License.
 
 export * from './Layout';
-export * from './Board';
 export * from './WalletConnect';
-export * from './CircuitCall';
+export * from './VotingPanel';
 

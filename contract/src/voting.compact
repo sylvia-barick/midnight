@@ -1,0 +1,48 @@
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export enum Choice {
+  A,
+  B
+}
+
+export ledger organizer: Bytes<32>;
+export ledger pollId: Bytes<32>;
+export ledger description: Opaque<"string">;
+export ledger tallyA: Counter;
+export ledger tallyB: Counter;
+export ledger votedNullifiers: Map<Bytes<32>, Boolean>;
+
+constructor(pollIdVal: Bytes<32>, pollDescription: Opaque<"string">, organizerPubKey: Bytes<32>) {
+  organizer = disclose(organizerPubKey);
+  pollId = disclose(pollIdVal);
+  description = disclose(pollDescription);
+}
+
+witness localSecretKey(): Bytes<32>;
+
+export circuit vote(choice: Choice): [] {
+  const secret = localSecretKey();
+  const nullifier = persistentHash<Vector<3, Bytes<32>>>([
+    pad(32, "voting:nullifier:"),
+    pollId,
+    secret
+  ]);
+
+  const disclosedNullifier = disclose(nullifier);
+  assert(!votedNullifiers.member(disclosedNullifier), "Voter has already cast a vote");
+
+  votedNullifiers.insert(disclosedNullifier, true);
+
+  const publicChoice = disclose(choice);
+  if (publicChoice == Choice.A) {
+    tallyA.increment(1);
+  } else {
+    tallyB.increment(1);
+  }
+}
+
+export circuit calculateNullifier(sk: Bytes<32>, pollIdVal: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<3, Bytes<32>>>([pad(32, "voting:nullifier:"), pollIdVal, sk]);
+}

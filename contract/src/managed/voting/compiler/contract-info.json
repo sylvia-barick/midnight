@@ -4,15 +4,19 @@
   "runtime-version": "0.16.0",
   "circuits": [
     {
-      "name": "post",
+      "name": "vote",
       "pure": false,
       "proof": true,
       "arguments": [
         {
-          "name": "newMessage",
+          "name": "choice",
           "type": {
-            "type-name": "Opaque",
-            "tsType": "string"
+            "type-name": "Enum",
+            "name": "Choice",
+            "elements": [
+              "A",
+              "B"
+            ]
           }
         }
       ],
@@ -23,18 +27,7 @@
       }
     },
     {
-      "name": "takeDown",
-      "pure": false,
-      "proof": true,
-      "arguments": [
-      ],
-      "result-type": {
-        "type-name": "Opaque",
-        "tsType": "string"
-      }
-    },
-    {
-      "name": "publicKey",
+      "name": "calculateNullifier",
       "pure": true,
       "proof": false,
       "arguments": [
@@ -46,7 +39,7 @@
           }
         },
         {
-          "name": "sequence",
+          "name": "pollIdVal",
           "type": {
             "type-name": "Bytes",
             "length": 32
@@ -74,58 +67,58 @@
   ],
   "ledger": [
     {
-      "name": "state",
+      "name": "organizer",
       "index": 0,
-      "exported": true,
-      "storage": "Cell",
-      "type": {
-        "type-name": "Enum",
-        "name": "State",
-        "elements": [
-          "VACANT",
-          "OCCUPIED"
-        ]
-      }
-    },
-    {
-      "name": "message",
-      "index": 1,
-      "exported": true,
-      "storage": "Cell",
-      "type": {
-        "type-name": "Struct",
-        "name": "Maybe",
-        "elements": [
-          {
-            "name": "is_some",
-            "type": {
-              "type-name": "Boolean"
-            }
-          },
-          {
-            "name": "value",
-            "type": {
-              "type-name": "Opaque",
-              "tsType": "string"
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "sequence",
-      "index": 2,
-      "exported": true,
-      "storage": "Counter"
-    },
-    {
-      "name": "owner",
-      "index": 3,
       "exported": true,
       "storage": "Cell",
       "type": {
         "type-name": "Bytes",
         "length": 32
+      }
+    },
+    {
+      "name": "pollId",
+      "index": 1,
+      "exported": true,
+      "storage": "Cell",
+      "type": {
+        "type-name": "Bytes",
+        "length": 32
+      }
+    },
+    {
+      "name": "description",
+      "index": 2,
+      "exported": true,
+      "storage": "Cell",
+      "type": {
+        "type-name": "Opaque",
+        "tsType": "string"
+      }
+    },
+    {
+      "name": "tallyA",
+      "index": 3,
+      "exported": true,
+      "storage": "Counter"
+    },
+    {
+      "name": "tallyB",
+      "index": 4,
+      "exported": true,
+      "storage": "Counter"
+    },
+    {
+      "name": "votedNullifiers",
+      "index": 5,
+      "exported": true,
+      "storage": "Map",
+      "key": {
+        "type-name": "Bytes",
+        "length": 32
+      },
+      "value": {
+        "type-name": "Boolean"
       }
     }
   ]

@@ -30,7 +30,6 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { theme } from './config/theme';
 import '@midnight-ntwrk/dapp-connector-api';
 import * as pino from 'pino';
-import { DeployedBoardProvider } from './contexts';
 import { MidnightProvider } from './hooks/useMidnight';
 
 const networkId = import.meta.env.VITE_NETWORK_ID as NetworkId;
@@ -50,9 +49,7 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
     <CssBaseline />
     <ThemeProvider theme={theme}>
       <MidnightProvider>
-        <DeployedBoardProvider logger={logger}>
-          <App />
-        </DeployedBoardProvider>
+        <App />
       </MidnightProvider>
     </ThemeProvider>
   </React.StrictMode>,

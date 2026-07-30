@@ -1,18 +1,17 @@
 import React, { useState } from 'react';
-import { Box, Button, TextField, Typography, CircularProgress, Alert, Paper, Tooltip, IconButton } from '@mui/material';
-import SendIcon from '@mui/icons-material/Send';
-import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
-import KeyIcon from '@mui/icons-material/Key';
-import CodeIcon from '@mui/icons-material/Code';
+import { Box, Button, TextField, Typography, CircularProgress, Alert, Paper, Tooltip, IconButton, LinearProgress } from '@mui/material';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import GppGoodIcon from '@mui/icons-material/GppGood';
 import LinkIcon from '@mui/icons-material/Link';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import LockIcon from '@mui/icons-material/Lock';
-import LockOpenIcon from '@mui/icons-material/LockOpen';
+import KeyIcon from '@mui/icons-material/Key';
+import CodeIcon from '@mui/icons-material/Code';
+import HowToVoteIcon from '@mui/icons-material/HowToVote';
+import PollIcon from '@mui/icons-material/Poll';
 import { useMidnight } from '../hooks/useMidnight';
+import { Choice } from '../../../contract/src/index';
 
-export const CircuitCall: React.FC = () => {
+export const VotingPanel: React.FC = () => {
   const {
     contractAddress,
     isWorking,
@@ -20,15 +19,14 @@ export const CircuitCall: React.FC = () => {
     txHash,
     txSuccess,
     txError,
-    boardState,
+    votingState,
     resolveContract,
-    postMessage,
-    takeDownMessage,
+    castVote,
     connectionStatus,
   } = useMidnight();
 
-  const [messageInput, setMessageInput] = useState('');
-  const [joinAddress, setJoinAddress] = useState('0200dbf964f541e1950883f5b2f539b66fd6111e46ce8e6e9551fbdd180114d5dd5b');
+  const [descriptionInput, setDescriptionInput] = useState('');
+  const [joinAddress, setJoinAddress] = useState('');
   const [isCopied, setIsCopied] = useState(false);
 
   const isConnected = connectionStatus === 'connected';
@@ -40,8 +38,10 @@ export const CircuitCall: React.FC = () => {
   };
 
   const handleDeploy = async () => {
+    if (!descriptionInput.trim()) return;
     try {
-      await resolveContract();
+      await resolveContract(descriptionInput.trim());
+      setDescriptionInput('');
     } catch (e) {
       console.error(e);
     }
@@ -56,19 +56,9 @@ export const CircuitCall: React.FC = () => {
     }
   };
 
-  const handlePost = async () => {
-    if (!messageInput.trim()) return;
+  const handleVote = async (choice: Choice) => {
     try {
-      await postMessage(messageInput.trim());
-      setMessageInput('');
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const handleTakeDown = async () => {
-    try {
-      await takeDownMessage();
+      await castVote(choice);
     } catch (e) {
       console.error(e);
     }
@@ -78,12 +68,15 @@ export const CircuitCall: React.FC = () => {
     return null;
   }
 
-  const isOccupied = boardState?.state === 1; // OCCUPIED is 1, VACANT is 0 in the contract enum State
-  const isVacant = boardState?.state === 0;
+  // Calculate vote percentages
+  const tallyA = Number(votingState?.tallyA ?? 0);
+  const tallyB = Number(votingState?.tallyB ?? 0);
+  const totalVotes = tallyA + tallyB;
+  const percentA = totalVotes > 0 ? Math.round((tallyA / totalVotes) * 100) : 0;
+  const percentB = totalVotes > 0 ? Math.round((tallyB / totalVotes) * 100) : 0;
 
   return (
     <Box sx={{ width: '100%', maxWidth: '800px', display: 'flex', flexDirection: 'column', gap: 3 }}>
-      {/* Contract deploy / join card */}
       {!contractAddress ? (
         <Paper
           sx={{
@@ -91,31 +84,51 @@ export const CircuitCall: React.FC = () => {
             backdropFilter: 'blur(16px)',
             border: '1px solid rgba(99, 102, 241, 0.2)',
             borderRadius: '16px',
-            padding: '24px',
+            padding: '28px',
             boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
           }}
         >
-          <Typography variant="h6" color="#fff" sx={{ fontWeight: 'bold', mb: 2 }}>
-            Bulletin Board Smart Contract
+          <Typography variant="h5" color="#fff" sx={{ fontWeight: 'bold', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+            <PollIcon sx={{ color: '#6366f1' }} /> Create or Join Private Poll
           </Typography>
-          <Typography variant="body2" color="rgba(255, 255, 255, 0.6)" sx={{ mb: 3 }}>
-            Deploy a new Bulletin Board contract instance on Preprod, or join an existing contract address to interact.
+          <Typography variant="body2" color="rgba(255, 255, 255, 0.6)" sx={{ mb: 4 }}>
+            Deploy a new Private Voting smart contract on the Midnight Preprod testnet, or join an existing contract using its address.
           </Typography>
 
-          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 3 }}>
-            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 4 }}>
+            <Box sx={{ flex: 1.2, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <Typography variant="body2" color="rgba(255, 255, 255, 0.8)" sx={{ fontWeight: '600', mb: 1.5 }}>
-                Option A: Deploy New Contract
+                Option A: Deploy New Poll
               </Typography>
+              <TextField
+                placeholder="Enter poll question/description..."
+                variant="outlined"
+                size="small"
+                fullWidth
+                value={descriptionInput}
+                onChange={(e) => setDescriptionInput(e.target.value)}
+                disabled={isWorking}
+                sx={{
+                  mb: 2,
+                  '& .MuiOutlinedInput-root': {
+                    color: '#fff',
+                    borderRadius: '8px',
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.15)' },
+                    '&:hover fieldset': { borderColor: 'rgba(99, 102, 241, 0.5)' },
+                    '&.Mui-focused fieldset': { borderColor: '#6366f1' },
+                  },
+                }}
+              />
               <Button
                 variant="contained"
-                disabled={isWorking}
+                disabled={isWorking || !descriptionInput.trim()}
                 onClick={handleDeploy}
                 startIcon={isWorking ? <CircularProgress size={20} color="inherit" /> : <CodeIcon />}
                 sx={{
                   background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
                   borderRadius: '8px',
-                  padding: '12px',
+                  padding: '10px',
                   fontWeight: 'bold',
                   textTransform: 'none',
                   '&:hover': {
@@ -123,17 +136,17 @@ export const CircuitCall: React.FC = () => {
                   },
                 }}
               >
-                {isWorking ? 'Deploying...' : 'Deploy Board Contract'}
+                {isWorking ? 'Deploying...' : 'Deploy Poll Contract'}
               </Button>
             </Box>
 
-            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-              <Typography variant="body2" color="rgba(255, 255, 255, 0.8)" sx={{ fontWeight: '600', mb: 1 }}>
-                Option B: Join Existing Board
+            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+              <Typography variant="body2" color="rgba(255, 255, 255, 0.8)" sx={{ fontWeight: '600', mb: 1.5 }}>
+                Option B: Join Existing Poll
               </Typography>
               <Box sx={{ display: 'flex', gap: 1 }}>
                 <TextField
-                  placeholder="Enter Contract Address (Hex)"
+                  placeholder="Contract Address (Hex)"
                   variant="outlined"
                   size="small"
                   value={joinAddress}
@@ -173,10 +186,9 @@ export const CircuitCall: React.FC = () => {
           </Box>
         </Paper>
       ) : (
-        // Active Contract Dashboard
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3, width: '100%' }}>
           {/* Main interacting card */}
-          <Box sx={{ flex: { xs: '1 1 auto', md: '7 7 0%' }, display: 'flex', flexDirection: 'column' }}>
+          <Box sx={{ flex: 1.3, display: 'flex', flexDirection: 'column' }}>
             <Paper
               sx={{
                 background: 'rgba(10, 10, 20, 0.6)',
@@ -192,145 +204,161 @@ export const CircuitCall: React.FC = () => {
             >
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                 <Typography variant="h6" color="#fff" sx={{ fontWeight: 'bold' }}>
-                  Bulletin Board
+                  Active Poll
                 </Typography>
                 <Box
                   sx={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: 1,
-                    background: isOccupied ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                    background: votingState?.hasVoted ? 'rgba(16, 185, 129, 0.1)' : 'rgba(99, 102, 241, 0.1)',
                     padding: '4px 12px',
                     borderRadius: '20px',
-                    border: isOccupied ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid rgba(16, 185, 129, 0.3)',
+                    border: votingState?.hasVoted ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(99, 102, 241, 0.3)',
                   }}
                 >
-                  {isOccupied ? (
-                    <LockIcon sx={{ color: '#f59e0b', fontSize: '16px' }} />
-                  ) : (
-                    <LockOpenIcon sx={{ color: '#10b981', fontSize: '16px' }} />
-                  )}
+                  <HowToVoteIcon sx={{ color: votingState?.hasVoted ? '#10b981' : '#818cf8', fontSize: '16px' }} />
                   <Typography
                     variant="caption"
-                    color={isOccupied ? '#f59e0b' : '#10b981'}
+                    color={votingState?.hasVoted ? '#10b981' : '#818cf8'}
                     sx={{ fontWeight: 'bold' }}
                   >
-                    {isOccupied ? 'OCCUPIED' : 'VACANT'}
+                    {votingState?.hasVoted ? 'VOTE CASTED' : 'VOTE PENDING'}
                   </Typography>
                 </Box>
               </Box>
 
-              {/* Current Board Message Display */}
+              {/* Poll Question Display */}
               <Box
                 sx={{
                   background: 'rgba(255, 255, 255, 0.02)',
                   border: '1px solid rgba(255, 255, 255, 0.05)',
                   borderRadius: '12px',
                   padding: '20px',
-                  minHeight: '140px',
+                  minHeight: '90px',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'center',
                   mb: 3,
-                  position: 'relative',
                 }}
               >
-                {isOccupied ? (
-                  <Box>
-                    <Typography variant="caption" color="rgba(255, 255, 255, 0.4)" sx={{ display: 'block', mb: 1 }}>
-                      Posted Message:
-                    </Typography>
-                    <Typography variant="h5" color="#fff" sx={{ fontWeight: '500', wordBreak: 'break-word' }}>
-                      {boardState?.message || ''}
-                    </Typography>
-                    {boardState?.isOwner && (
-                      <Typography variant="caption" color="#10b981" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 2 }}>
-                        <CheckCircleIcon sx={{ fontSize: '14px' }} /> You own this post (derived from your private secret)
-                      </Typography>
-                    )}
-                  </Box>
-                ) : (
-                  <Box sx={{ textAlign: 'center' }}>
-                    <Typography variant="body1" color="rgba(255, 255, 255, 0.4)">
-                      No message posted. The board is vacant.
-                    </Typography>
-                  </Box>
-                )}
+                <Typography variant="body2" color="rgba(255, 255, 255, 0.4)" sx={{ display: 'block', mb: 1 }}>
+                  Question:
+                </Typography>
+                <Typography variant="h6" color="#fff" sx={{ fontWeight: '500', wordBreak: 'break-word' }}>
+                  {votingState?.description || 'Loading poll description...'}
+                </Typography>
               </Box>
 
-              {/* Circuit Caller UI */}
+              {/* Vote Stats / Visual Tally */}
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="subtitle2" color="rgba(255, 255, 255, 0.6)" sx={{ mb: 2, display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Current Results</span>
+                  <span>{totalVotes} total {totalVotes === 1 ? 'vote' : 'votes'}</span>
+                </Typography>
+
+                <Box sx={{ mb: 2 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                    <Typography variant="body2" color="#6366f1" sx={{ fontWeight: 'bold' }}>Option A (Yes)</Typography>
+                    <Typography variant="body2" color="#fff" sx={{ fontWeight: 'bold' }}>{tallyA} ({percentA}%)</Typography>
+                  </Box>
+                  <LinearProgress
+                    variant="determinate"
+                    value={percentA}
+                    sx={{
+                      height: '8px',
+                      borderRadius: '4px',
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      '& .MuiLinearProgress-bar': {
+                        background: 'linear-gradient(90deg, #6366f1, #a855f7)',
+                      }
+                    }}
+                  />
+                </Box>
+
+                <Box sx={{ mb: 2 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                    <Typography variant="body2" color="#06b6d4" sx={{ fontWeight: 'bold' }}>Option B (No)</Typography>
+                    <Typography variant="body2" color="#fff" sx={{ fontWeight: 'bold' }}>{tallyB} ({percentB}%)</Typography>
+                  </Box>
+                  <LinearProgress
+                    variant="determinate"
+                    value={percentB}
+                    sx={{
+                      height: '8px',
+                      borderRadius: '4px',
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      '& .MuiLinearProgress-bar': {
+                        background: 'linear-gradient(90deg, #06b6d4, #3b82f6)',
+                      }
+                    }}
+                  />
+                </Box>
+              </Box>
+
+              {/* Voting buttons */}
               <Box sx={{ mt: 'auto' }}>
-                {isVacant ? (
-                  <Box sx={{ display: 'flex', gap: 1 }}>
-                    <TextField
-                      placeholder="Message to post..."
-                      variant="outlined"
-                      size="medium"
-                      fullWidth
-                      value={messageInput}
-                      onChange={(e) => setMessageInput(e.target.value)}
-                      disabled={isWorking}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          color: '#fff',
-                          borderRadius: '8px',
-                          background: 'rgba(255, 255, 255, 0.03)',
-                          '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.15)' },
-                          '&:hover fieldset': { borderColor: 'rgba(99, 102, 241, 0.5)' },
-                          '&.Mui-focused fieldset': { borderColor: '#6366f1' },
-                        },
-                      }}
-                    />
+                {votingState?.hasVoted ? (
+                  <Alert
+                    severity="success"
+                    icon={<GppGoodIcon sx={{ color: '#34d399' }} />}
+                    sx={{
+                      background: 'rgba(16, 185, 129, 0.08)',
+                      border: '1px solid rgba(16, 185, 129, 0.3)',
+                      color: '#a7f3d0',
+                      borderRadius: '8px',
+                    }}
+                  >
+                    You have successfully voted! Your local zero-knowledge proof has registered your vote while keeping your identity completely shielded on the ledger.
+                  </Alert>
+                ) : (
+                  <Box sx={{ display: 'flex', gap: 2 }}>
                     <Button
                       variant="contained"
-                      onClick={handlePost}
-                      disabled={isWorking || !messageInput.trim()}
-                      startIcon={<SendIcon />}
+                      fullWidth
+                      disabled={isWorking}
+                      onClick={() => handleVote(Choice.A)}
                       sx={{
                         background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
                         color: '#fff',
                         borderRadius: '8px',
                         fontWeight: 'bold',
-                        padding: '0 20px',
+                        padding: '12px',
                         textTransform: 'none',
                         '&:hover': {
                           background: 'linear-gradient(135deg, #4f46e5 0%, #9333ea 100%)',
                         },
                       }}
                     >
-                      Post
+                      Vote Option A (Yes)
+                    </Button>
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      disabled={isWorking}
+                      onClick={() => handleVote(Choice.B)}
+                      sx={{
+                        background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
+                        color: '#fff',
+                        borderRadius: '8px',
+                        fontWeight: 'bold',
+                        padding: '12px',
+                        textTransform: 'none',
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, #0891b2 0%, #2563eb 100%)',
+                        },
+                      }}
+                    >
+                      Vote Option B (No)
                     </Button>
                   </Box>
-                ) : (
-                  <Button
-                    variant="contained"
-                    fullWidth
-                    color="error"
-                    disabled={isWorking || !boardState?.isOwner}
-                    onClick={handleTakeDown}
-                    startIcon={<DeleteSweepIcon />}
-                    sx={{
-                      borderRadius: '8px',
-                      padding: '12px',
-                      fontWeight: 'bold',
-                      textTransform: 'none',
-                      background: boardState?.isOwner
-                        ? 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)'
-                        : 'rgba(255, 255, 255, 0.05)',
-                      '&:hover': {
-                        background: 'linear-gradient(135deg, #dc2626 0%, #991b1b 100%)',
-                      },
-                    }}
-                  >
-                    {!boardState?.isOwner ? 'Locked (Only author can take down)' : 'Take Down Message'}
-                  </Button>
                 )}
               </Box>
             </Paper>
           </Box>
 
-          {/* Derived / Proving info side card */}
-          <Box sx={{ flex: { xs: '1 1 auto', md: '5 5 0%' }, display: 'flex', flexDirection: 'column' }}>
+          {/* Privacy Monitor Panel */}
+          <Box sx={{ flex: 0.9, display: 'flex', flexDirection: 'column' }}>
             <Paper
               sx={{
                 background: 'rgba(10, 10, 20, 0.6)',
@@ -349,7 +377,6 @@ export const CircuitCall: React.FC = () => {
                 Privacy Monitor
               </Typography>
 
-              {/* Status information */}
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <Box>
                   <Typography variant="caption" color="rgba(255, 255, 255, 0.4)" sx={{ display: 'block', mb: 0.5 }}>
@@ -381,10 +408,10 @@ export const CircuitCall: React.FC = () => {
                   <KeyIcon sx={{ color: '#818cf8', fontSize: '20px', mt: 0.2 }} />
                   <Box>
                     <Typography variant="caption" color="#a5b4fc" sx={{ fontWeight: 'bold', display: 'block' }}>
-                      Proved without revealing your private input
+                      Nullifier Guard Active
                     </Typography>
                     <Typography variant="caption" color="rgba(255, 255, 255, 0.6)">
-                      The contract derives the post owner using a ZK proof derived from your local seed. Your secret key is never published on-chain.
+                      The contract derives a cryptographic nullifier locally. Your private wallet seed is never published on-chain, keeping you completely anonymous.
                     </Typography>
                   </Box>
                 </Box>
@@ -427,11 +454,11 @@ export const CircuitCall: React.FC = () => {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
                       <GppGoodIcon sx={{ color: '#10b981' }} />
                       <Typography variant="body2" color="#34d399" sx={{ fontWeight: 'bold' }}>
-                        Zero-Knowledge Proof Generated Successfully
+                        ZK-Proof Generated Successfully
                       </Typography>
                     </Box>
                     <Typography variant="caption" color="rgba(255, 255, 255, 0.7)" sx={{ display: 'block', mb: 1.5 }}>
-                      Your private data remained private throughout the transaction.
+                      Your vote choice has been submitted without leaking your public identity.
                     </Typography>
 
                     <Button

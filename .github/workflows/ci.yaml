@@ -62,3 +62,4 @@ jobs:
         working-directory: bboard-ui
         run: |
           npm run ci
+          npm run build

@@ -1,16 +1,22 @@
 import React from 'react';
-import { Box, Container, Typography, Paper, Link } from '@mui/material';
+import { Box, Container, Typography, Paper } from '@mui/material';
 import ShieldIcon from '@mui/icons-material/Shield';
 import LockIcon from '@mui/icons-material/Lock';
 import StorageIcon from '@mui/icons-material/Storage';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import ArrowRightAltIcon from '@mui/icons-material/ArrowRightAlt';
-import { WalletConnect, CircuitCall } from './components';
+import HowToVoteIcon from '@mui/icons-material/HowToVote';
+import { WalletConnect, VotingPanel } from './components';
 import { useMidnight } from './hooks/useMidnight';
 
 const App: React.FC = () => {
-  const { connectionStatus, contractAddress, boardState } = useMidnight();
+  const { connectionStatus, contractAddress, votingState } = useMidnight();
   const isConnected = connectionStatus === 'connected';
+
+  // Calculate totals
+  const tallyA = Number(votingState?.tallyA ?? 0);
+  const tallyB = Number(votingState?.tallyB ?? 0);
+  const totalVotes = tallyA + tallyB;
 
   return (
     <Box
@@ -22,7 +28,6 @@ const App: React.FC = () => {
         position: 'relative',
         overflow: 'hidden',
         paddingBottom: '80px',
-        // Layered premium gradients and radial glows
         '&::before': {
           content: '""',
           position: 'absolute',
@@ -83,10 +88,10 @@ const App: React.FC = () => {
                 boxShadow: '0 0 15px rgba(99, 102, 241, 0.5)',
               }}
             >
-              <ShieldIcon sx={{ color: '#fff', fontSize: '22px' }} />
+              <HowToVoteIcon sx={{ color: '#fff', fontSize: '22px' }} />
             </Box>
             <Typography variant="h5" sx={{ fontWeight: '900', letterSpacing: '1px', background: 'linear-gradient(90deg, #fff, #cbd5e1)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              MIDNIGHT BBOARD
+              MIDNIGHT VOTING
             </Typography>
           </Box>
 
@@ -122,7 +127,7 @@ const App: React.FC = () => {
                 }}
               >
                 <Typography variant="caption" color="#a5b4fc" sx={{ fontWeight: 'bold', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
-                  Zero-Knowledge Privacy DApp
+                  Anonymous Private Ballot
                 </Typography>
                 <ArrowRightAltIcon sx={{ color: '#a5b4fc', fontSize: '16px' }} />
               </Box>
@@ -140,11 +145,11 @@ const App: React.FC = () => {
                   letterSpacing: '-1px',
                 }}
               >
-                Post Public Messages,<br /> Prove Ownership Privately.
+                Cast Shielded Ballots,<br /> Enforce Unique Votes.
               </Typography>
 
               <Typography variant="h6" color="rgba(255, 255, 255, 0.6)" sx={{ fontWeight: '400', mb: 4, maxWidth: '600px', lineHeight: 1.6 }}>
-                A cutting-edge Web3 bulletin board powered by Midnight's local proof generation. Disclose post contents publicly while keeping your private keys and signatures off the public ledger.
+                A cutting-edge Web3 private voting portal powered by Midnight's local proof generation. Submit your ballot securely on-chain while keeping your private keys and voter identity completely hidden.
               </Typography>
 
               {/* Privacy claim summary list */}
@@ -152,15 +157,15 @@ const App: React.FC = () => {
                 <Box sx={{ flex: 1, display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
                   <VerifiedUserIcon sx={{ color: '#06b6d4', mt: 0.3 }} />
                   <Box>
-                    <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#fff' }}>Local Proofs</Typography>
-                    <Typography variant="caption" color="rgba(255, 255, 255, 0.5)">ZK proofs are computed client-side inside your browser.</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#fff' }}>Local Nullifiers</Typography>
+                    <Typography variant="caption" color="rgba(255, 255, 255, 0.5)">ZK proofs are computed locally to check voter eligibility without double voting.</Typography>
                   </Box>
                 </Box>
                 <Box sx={{ flex: 1, display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
                   <LockIcon sx={{ color: '#a855f7', mt: 0.3 }} />
                   <Box>
-                    <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#fff' }}>Zero Leakage</Typography>
-                    <Typography variant="caption" color="rgba(255, 255, 255, 0.5)">Your master seed and private keys are never exposed on-chain.</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#fff' }}>Shielded Identity</Typography>
+                    <Typography variant="caption" color="rgba(255, 255, 255, 0.5)">Your master seed and private keys are never exposed on-chain or linked to your vote.</Typography>
                   </Box>
                 </Box>
               </Box>
@@ -255,13 +260,13 @@ const App: React.FC = () => {
                   }}
                 >
                   <Typography variant="caption" color="rgba(255,255,255,0.4)" sx={{ display: 'block', mb: 1 }}>
-                    Board Status
+                    Ballots Cast
                   </Typography>
-                  <Typography variant="h6" color={boardState?.state === 1 ? '#ef4444' : '#10b981'} sx={{ fontWeight: 'bold' }}>
-                    {boardState?.state === 1 ? 'Occupied' : boardState?.state === 0 ? 'Vacant' : 'Uninitialized'}
+                  <Typography variant="h6" color="#06b6d4" sx={{ fontWeight: 'bold' }}>
+                    {contractAddress ? totalVotes : 0}
                   </Typography>
                   <Typography variant="caption" color="rgba(255,255,255,0.3)">
-                    {boardState?.state === 1 ? 'Locked by current author' : 'Ready for posts'}
+                    {votingState?.hasVoted ? 'Shielded ballot registered' : 'Awaiting your selection'}
                   </Typography>
                 </Paper>
               </Box>
@@ -269,7 +274,7 @@ const App: React.FC = () => {
 
             {/* Dashboard interactive tools */}
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, mb: 2 }}>
-              <CircuitCall />
+              <VotingPanel />
             </Box>
 
             {/* Quick Wallet disconnect trigger on dashboard */}
@@ -290,7 +295,7 @@ const App: React.FC = () => {
           }}
         >
           <Typography variant="h6" color="#fff" sx={{ fontWeight: 'bold', mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <ShieldIcon sx={{ color: '#6366f1' }} /> Detailed Privacy Model
+            <ShieldIcon sx={{ color: '#6366f1' }} /> Detailed ZK Voting Privacy Model
           </Typography>
 
           <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 4 }}>
@@ -300,10 +305,10 @@ const App: React.FC = () => {
               </Typography>
               <Typography variant="body2" color="rgba(255, 255, 255, 0.5)" sx={{ lineHeight: 1.6 }}>
                 On the Midnight blockchain, anyone can see:
-                <br />• The deployed contract address and code hashes.
-                <br />• The current board state (Vacant or Occupied).
-                <br />• The message string currently posted.
-                <br />• The owner's derived cryptographic identity (public key hash).
+                <br />• The active contract address and code hashes.
+                <br />• The poll question/description and poll ID.
+                <br />• The public counters (`tallyA` & `tallyB`).
+                <br />• The list of consumed voter nullifiers (preventing double votes).
               </Typography>
             </Box>
 
@@ -312,10 +317,10 @@ const App: React.FC = () => {
                 <LockIcon sx={{ fontSize: '18px' }} /> Private Local Data
               </Typography>
               <Typography variant="body2" color="rgba(255, 255, 255, 0.5)" sx={{ lineHeight: 1.6 }}>
-                Stays strictly in your local browser state:
-                <br />• Your Lace wallet master seed and mnemonics.
-                <br />• The `localSecretKey` used to compute the owner hash for the posted message.
-                <br />• Intermediate circuit witness calculations.
+                Stays strictly inside your local browser:
+                <br />• Your Lace wallet master seed and private credentials.
+                <br />• The `localSecretKey` used to compute the deterministic nullifier.
+                <br />• Intermediate circuit calculation variables and ZK witnesses.
               </Typography>
             </Box>
 
@@ -325,7 +330,7 @@ const App: React.FC = () => {
               </Typography>
               <Typography variant="body2" color="rgba(255, 255, 255, 0.5)" sx={{ lineHeight: 1.6 }}>
                 <strong>What an observer cannot see:</strong>
-                <br />They cannot link the posted message to your actual wallet address or shielded keys. They cannot discover the secret key that generated the proof, making it cryptographically impossible to trace or spoof authorship.
+                <br />They cannot link any cast nullifier back to your active wallet address or shielded keys. The cryptographic connection between the voter's identity and their cast ballot remains completely untraceable.
               </Typography>
             </Box>
           </Box>
