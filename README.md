@@ -68,47 +68,49 @@ Midnight Private Voting solves the core conflict of online voting: maintaining a
 
 The diagram below maps the technical architecture, indicating where the private state lives, where ZK proofs are generated, and where public ledger state is recorded:
 
+
 ```mermaid
 graph TD
-    subgraph Client ["Client Browser (Local Private State)"]
-        User["Voter (User)"]
-        UI["React Frontend (MUI)"]
-        Wallet["Lace Wallet (Extension)"]
-        Prover["Client Proof Prover"]
-        
-        User -->|1. Interactive Choice| UI
-        UI -->|2. Request Keys| Wallet
-        Wallet -.->|3. Return Shielded Address| UI
-        UI -->|4. Input Secret Key & Choice| Prover
-        Prover -->|5. Generate ZK Proof| UI
-    end
 
-    subgraph Service ["SDK Infrastructure Services"]
-        API["TypeScript API Layer (VotingAPI)"]
-        ProofServer["Midnight Proof Server (Local Daemon)"]
-        Indexer["Midnight Indexer (State Sync)"]
-        
-        UI -->|6. Call vote()| API
-        Prover -->|Proving Keys & ZKIR| ProofServer
-        API -->|Fetch Ledger State| Indexer
-    end
+subgraph Client["Client Browser (Local Private State)"]
+    User["Voter (User)"]
+    UI["React Frontend (MUI)"]
+    Wallet["Lace Wallet Extension"]
+    Prover["Client Proof Prover"]
 
-    subgraph LedgerSub ["Confidential Blockchain Network"]
-        Contract["Compact Smart Contract (Voting)"]
-        Node["Midnight Preprod Node"]
-        
-        API -->|7. Submit Signed Transaction| Node
-        Node -->|8. Verify ZK Proof| Contract
-        Contract -->|9. Update State| Node
-    end
+    User -->|"1. Interactive Choice"| UI
+    UI -->|"2. Request Keys"| Wallet
+    Wallet -.->|"3. Return Shielded Address"| UI
+    UI -->|"4. Secret Key + Vote Choice"| Prover
+    Prover -->|"5. Generate ZK Proof"| UI
+end
 
-    classDef private fill:#1e1b4b,stroke:#818cf8,stroke-width:2px,color:#fff;
-    classDef public fill:#06b6d4,stroke:#3b82f6,stroke-width:2px,color:#000;
-    classDef zk fill:#4d7c0f,stroke:#84cc16,stroke-width:2px,color:#fff;
-    
-    class User,UI,Wallet,Prover private;
-    class Contract,Node,Indexer public;
-    class ProofServer zk;
+subgraph Service["SDK Infrastructure Services"]
+    API["TypeScript API Layer"]
+    ProofServer["Midnight Proof Server"]
+    Indexer["Midnight Indexer"]
+
+    UI -->|"6. Call vote"| API
+    Prover -->|"Load Proving Keys"| ProofServer
+    API -->|"Fetch Ledger State"| Indexer
+end
+
+subgraph Ledger["Confidential Blockchain Network"]
+    Contract["Compact Voting Contract"]
+    Node["Midnight Preprod Node"]
+
+    API -->|"7. Submit Transaction"| Node
+    Node -->|"8. Verify ZK Proof"| Contract
+    Contract -->|"9. Update Ledger State"| Node
+end
+
+classDef private fill:#1e1b4b,stroke:#818cf8,stroke-width:2px,color:#ffffff
+classDef public fill:#06b6d4,stroke:#3b82f6,stroke-width:2px,color:#000000
+classDef zk fill:#4d7c0f,stroke:#84cc16,stroke-width:2px,color:#ffffff
+
+class User,UI,Wallet,Prover private
+class API,Indexer,Contract,Node public
+class ProofServer zk
 ```
 
 ---
@@ -199,29 +201,17 @@ The application splits all data structures into public and private layers:
 
 ## Application
 
-### Home Dashboard (Disconnected)
+### Home Dashboard and wallet connected
 ![Home](banner.png)
 
 ### Test Results
-![Contract Tests](tests.png)
-
-### Poll Deploy Interface
-![Deploy Poll](docs/images/deploy.png)
-
-### Active Poll & Tally Gauges
-![Vote](docs/images/vote.png)
-
-### Successful Ballot Proof & Ledger Link
-![Result](docs/images/result.png)
-
-### Lace Wallet Connected
-![Wallet Connected](docs/images/wallet.png)
+![Contract Tests](test.png)
 
 ---
 
 ## 8. Demo
 
-* **Live Demo Url**: [https://midnight-level2-bboard.vercel.app](https://midnight-level2-bboard.vercel.app) *(Placeholder)*
+* **Live Demo Url**: [https://midnight-theta-two.vercel.app/](https://midnight-theta-two.vercel.app/) 
 * **Video Demo Url**: [https://drive.google.com/drive/folders/1VdZkEbYkubP3RYzzeJVh_Utx4k1CCuij?usp=sharing](https://drive.google.com/drive/folders/1VdZkEbYkubP3RYzzeJVh_Utx4k1CCuij?usp=sharing) *(Placeholder)*
 * **GitHub Repository**: [https://github.com/sylvia-barick/midnight.git](https://github.com/sylvia-barick/midnight)
 
@@ -250,7 +240,7 @@ npm run test
    Start at  21:01:09
    Duration  949ms (transform 236ms, setup 0ms, import 351ms, tests 275ms, environment 0ms)
 ```
-![Tests Screenshot](docs/images/tests.png)
+![Tests Screenshot](test.png)
 
 ---
 
@@ -268,7 +258,7 @@ graph TD
     API --> UI[Build Frontend UI]
     UI --> Success([Success Build Verified])
 ```
-![CI Screenshot](docs/images/ci.png)
+![CI Screenshot](cicd.png)
 
 ---
 
@@ -359,13 +349,7 @@ Below is the list of assets submitted for Level 3 evaluation:
 * **GitHub Repository**: [https://github.com/sylvia-barick/midnight.git](https://github.com/sylvia-barick/midnight)
 * **README**: [README.md](file:///Ubuntu-22.04/home/sylvia/midnight/README.md)
 * **Proposal**: [PROPOSAL.md](file:///Ubuntu-22.04/home/sylvia/midnight/PROPOSAL.md)
-* **Video Demo**: `docs/images/video_link.txt` *(Placeholder)*
-* **Live Demo**: `docs/images/live_link.txt` *(Placeholder)*
-* **CI/CD Build Screenshot**: `docs/images/ci.png` *(Placeholder)*
-* **Vitest Execution Screenshot**: `docs/images/tests.png` *(Placeholder)*
+* **Live Demo**: [https://midnight-theta-two.vercel.app/](https://midnight-theta-two.vercel.app)
+* **CI/CD Build Screenshot**: `cicd.png` 
 * **App Screens**:
-  * Home Screen: `docs/images/home.png` *(Placeholder)*
-  * Deploy Screen: `docs/images/deploy.png` *(Placeholder)*
-  * Vote Screen: `docs/images/vote.png` *(Placeholder)*
-  * Result Screen: `docs/images/result.png` *(Placeholder)*
-  * Wallet Connected: `docs/images/wallet.png` *(Placeholder)*
+  * Home Screen: `banner.png` 
