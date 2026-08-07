@@ -72,11 +72,23 @@ The diagram below maps the technical architecture, indicating where the private 
 ```mermaid
 graph TD
 
+<<<<<<< HEAD
 subgraph Client["Client Browser (Local Private State)"]
     User["Voter (User)"]
     UI["React Frontend (MUI)"]
     Wallet["Lace Wallet Extension"]
     Prover["Client Proof Prover"]
+=======
+    subgraph Service ["SDK Infrastructure Services"]
+        API["TypeScript API Layer (VotingAPI)"]
+        ProofServer["Midnight Proof Server (Local Daemon)"]
+        Indexer["Midnight Indexer (State Sync)"]
+        
+        UI -->|6. Call vote| API
+        Prover -->|Proving Keys & ZKIR| ProofServer
+        API -->|Fetch Ledger State| Indexer
+    end
+>>>>>>> ac6d495 (docs: fix Mermaid syntax parsing error on README)
 
     User -->|"1. Interactive Choice"| UI
     UI -->|"2. Request Keys"| Wallet
