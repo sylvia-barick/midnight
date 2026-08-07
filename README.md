@@ -11,29 +11,45 @@ Welcome to **Secret Notes**, a premium, production-grade, privacy-preserving pri
 
 ---
 
+## Live Demo & Resources
+- **Live Demo URL**: [https://midnight-theta-two.vercel.app/](https://midnight-theta-two.vercel.app/)
+- **GitHub Repository**: [https://github.com/sylvia-barick/midnight](https://github.com/sylvia-barick/midnight)
+- **Demo Video / Walkthrough**: [https://drive.google.com/drive/folders/1VdZkEbYkubP3RYzzeJVh_Utx4k1CCuij?usp=sharing](https://drive.google.com/drive/folders/1VdZkEbYkubP3RYzzeJVh_Utx4k1CCuij?usp=sharing)
+
+---
+
+## Table of Contents
+
+* [1. System Architecture](#1-system-architecture)
+* [2. Architecture Details](#2-architecture-details)
+* [3. Data Schemas & ZK Equations](#3-data-schemas--zk-equations)
+* [4. State Transition Workflow](#4-state-transition-workflow)
+* [5. ZK Smart Contract Constraints](#5-zk-smart-contract-constraints)
+* [6. Folder Structure](#6-folder-structure)
+* [7. Installation & Running](#7-installation--running)
+* [8. Smart Contract Compilation](#8-smart-contract-compilation)
+* [9. Testing](#9-testing)
+* [10. Deployment Guide](#10-deployment-guide)
+* [11. Wallet Setup](#11-wallet-setup)
+* [12. CI/CD Pipeline](#12-cicd-pipeline)
+* [13. Screenshots & Demo](#13-screenshots--demo)
+* [Contract Address](#contract-address)
+* [14. Performance](#14-performance)
+* [15. Future Improvements](#15-future-improvements)
+* [16. Contributing](#16-contributing)
+* [17. License](#17-license)
+* [18. Acknowledgements](#18-acknowledgements)
+* [19. Submission Assets](#19-submission-assets)
+
+---
+
 ## 1. System Architecture
 
 The Secret Notes DApp splits operations between **local client-side execution** (private state, proving) and **on-chain consensus verification** (public ledger state).
 
 ### Architecture Flowchart
 
-
 ```mermaid
-<<<<<<< HEAD
-graph TD
-
-<<<<<<< HEAD
-subgraph Client["Client Browser (Local Private State)"]
-    User["Voter (User)"]
-    UI["React Frontend (MUI)"]
-    Wallet["Lace Wallet Extension"]
-    Prover["Client Proof Prover"]
-=======
-    subgraph Service ["SDK Infrastructure Services"]
-        API["TypeScript API Layer (VotingAPI)"]
-        ProofServer["Midnight Proof Server (Local Daemon)"]
-        Indexer["Midnight Indexer (State Sync)"]
-=======
 graph TB
     subgraph Client ["Client Browser (Local Private Boundary)"]
         UI["React Web Application"]
@@ -54,49 +70,12 @@ graph TB
         Ledger["Compact Notes Smart Contract"]
         NotesMap[("notes Ledger Map (32-byte Commitments)")]
         NullifiersMap[("nullifiers Ledger Map (32-byte Nullifiers)")]
->>>>>>> d036a44 (modifiedd)
         
         Wallet -->|Broadcast unbalanced tx & proof| Ledger
         Ledger -->|Verify ZK proof & append commitment| NotesMap
         Ledger -->|Verify deterministic nullifier & mark spent| NullifiersMap
     end
->>>>>>> ac6d495 (docs: fix Mermaid syntax parsing error on README)
 
-<<<<<<< HEAD
-    User -->|"1. Interactive Choice"| UI
-    UI -->|"2. Request Keys"| Wallet
-    Wallet -.->|"3. Return Shielded Address"| UI
-    UI -->|"4. Secret Key + Vote Choice"| Prover
-    Prover -->|"5. Generate ZK Proof"| UI
-end
-
-subgraph Service["SDK Infrastructure Services"]
-    API["TypeScript API Layer"]
-    ProofServer["Midnight Proof Server"]
-    Indexer["Midnight Indexer"]
-
-    UI -->|"6. Call vote"| API
-    Prover -->|"Load Proving Keys"| ProofServer
-    API -->|"Fetch Ledger State"| Indexer
-end
-
-subgraph Ledger["Confidential Blockchain Network"]
-    Contract["Compact Voting Contract"]
-    Node["Midnight Preprod Node"]
-
-    API -->|"7. Submit Transaction"| Node
-    Node -->|"8. Verify ZK Proof"| Contract
-    Contract -->|"9. Update Ledger State"| Node
-end
-
-classDef private fill:#1e1b4b,stroke:#818cf8,stroke-width:2px,color:#ffffff
-classDef public fill:#06b6d4,stroke:#3b82f6,stroke-width:2px,color:#000000
-classDef zk fill:#4d7c0f,stroke:#84cc16,stroke-width:2px,color:#ffffff
-
-class User,UI,Wallet,Prover private
-class API,Indexer,Contract,Node public
-class ProofServer zk
-=======
     subgraph Indexer ["Indexer Services"]
         Index["Midnight Indexer Node"]
         IndexSub["WebSocket State Stream"]
@@ -105,7 +84,6 @@ class ProofServer zk
         Index -->|Push State updates| IndexSub
         IndexSub -->|Observable State$ updates| Hook
     end
->>>>>>> d036a44 (modifiedd)
 ```
 
 ---
@@ -224,13 +202,6 @@ The [notes.compact](file:///Ubuntu-22.04/home/sylvia/level2/contract/src/notes.c
 
 ### Prerequisites
 
-<<<<<<< HEAD
-### Home Dashboard and wallet connected
-![Home](banner.png)
-
-### Test Results
-![Contract Tests](test.png)
-=======
 * Node.js `>= 24.11.1` (or managed via NVM)
 * Midnight Compact Compiler (installed globally under WSL)
 
@@ -250,41 +221,29 @@ The [notes.compact](file:///Ubuntu-22.04/home/sylvia/level2/contract/src/notes.c
    ```bash
    npm run dev --workspace=@midnight-ntwrk/bboard-ui
    ```
->>>>>>> d036a44 (modifiedd)
 
 ---
 
 ## 8. Smart Contract Compilation
 
-<<<<<<< HEAD
-* **Live Demo Url**: [https://midnight-theta-two.vercel.app/](https://midnight-theta-two.vercel.app/) 
-* **Video Demo Url**: [https://drive.google.com/drive/folders/1VdZkEbYkubP3RYzzeJVh_Utx4k1CCuij?usp=sharing](https://drive.google.com/drive/folders/1VdZkEbYkubP3RYzzeJVh_Utx4k1CCuij?usp=sharing) *(Placeholder)*
-* **GitHub Repository**: [https://github.com/sylvia-barick/midnight.git](https://github.com/sylvia-barick/midnight)
+To compile `notes.compact` into TypeScript interfaces and generate ZKIR keys, execute inside the `contract` folder:
+```bash
+npm run compact
+```
 
 ---
 
 ## 9. Testing
 
 The smart contract uses simulated ledger contexts to run automated unit tests.
-To run the Vitest test suite:
-=======
-To compile `notes.compact` into TypeScript interfaces and generate ZKIR keys, execute inside the `contract` folder:
-```bash
-npm run compact
-```
-
-To run the ZK contract simulator unit tests:
->>>>>>> d036a44 (modifiedd)
+To run the ZK contract simulator unit tests, execute inside the `contract` folder:
 ```bash
 npm run test
 ```
 
----
-
-## 9. Deployment Guide
-
-<<<<<<< HEAD
- ✓ src/test/voting.test.ts (6 tests) 275ms
+Expected output:
+```text
+ ✓ src/test/notes.test.ts (6 tests) 275ms
 
  Test Files  1 passed (1)
       Tests  6 passed (6)
@@ -292,20 +251,31 @@ npm run test
    Duration  949ms (transform 236ms, setup 0ms, import 351ms, tests 275ms, environment 0ms)
 ```
 ![Tests Screenshot](test.png)
-=======
+
+---
+
+## 10. Deployment Guide
+
 To deploy the smart contract to Midnight Preprod:
 1. Ensure your browser is running the Lace Wallet extension set to Preprod network.
 2. Navigate to the **Deploy Contract** tab in the UI.
 3. Click **Deploy Compact Notes Contract**.
 4. Approve the gas fee balancing request in the Lace Wallet pop-up.
 5. The deployed contract address will be displayed and automatically saved to your browser session.
->>>>>>> d036a44 (modifiedd)
 
 ---
 
-## 10. Wallet Setup
+## 11. Wallet Setup
 
-<<<<<<< HEAD
+1. Install the official **Midnight Lace Wallet** or **1AM Wallet** extension in your browser.
+2. Select the **Midnight Preprod** network configuration.
+3. Fund your wallet address with Preprod tADA/tDUSK test tokens from the official faucet.
+4. Click **Connect Wallet** in the application navbar or home screen.
+
+---
+
+## 12. CI/CD Pipeline
+
 Our GitHub Actions workflow enforces validation pipelines on every push:
 
 ```mermaid
@@ -319,30 +289,21 @@ graph TD
     UI --> Success([Success Build Verified])
 ```
 ![CI Screenshot](cicd.png)
-=======
-1. Install the official **Midnight Lace Wallet** or **1AM Wallet** extension in your browser.
-2. Select the **Midnight Preprod** network configuration.
-3. Fund your wallet address with Preprod tADA/tDUSK test tokens from the official faucet.
-4. Click **Connect Wallet** in the application navbar or home screen.
->>>>>>> d036a44 (modifiedd)
 
 ---
 
-## 11. Preprod Environment
-
-To check transaction confirmation statuses or view block operations, use the Midnight Preprod Network Indexer:
-* **Preprod Indexer**: `https://indexer.preprod.midnight.network`
-* **Proof Prover Service**: `http://localhost:6300` (or the RPC prover configured in your Lace wallet)
-
----
-
-## 12. Screenshots & Demo Placeholders
+## 13. Screenshots & Demo
 
 ### Application Screenshots
 
-* **Home Screen**: *[Placeholder: screenshots/home.png]*
-* **Dashboard Overview**: *[Placeholder: screenshots/dashboard.png]*
-* **Notes Workspace**: *[Placeholder: screenshots/notes.png]*
+* **Home Screen**:
+  ![Home Screen](banner.png)
+
+* **Test Results**:
+  ![Test Results](test.png)
+
+* **CI/CD Verification**:
+  ![CI/CD Verification](cicd.png)
 
 ### Project Demo Video
 
@@ -355,25 +316,23 @@ To check transaction confirmation statuses or view block operations, use the Mid
 * **Preprod Contract Address**: `0200dbf964f541e1950883f5b2f539b66fd6111e46ce8e6e9551fbdd180114d5dd5b`
 * **Network**: `Midnight Preprod`
 
-<<<<<<< HEAD
 ---
 
 ## 14. Performance
 
 * **Client-Side Proof Generation**: Proof compilation is offloaded to the client browser, reducing backend server loads.
-* **Selective Disclosure**: The voter only discloses what is necessary (proof and nullifier), keeping all other data confidential.
+* **Selective Disclosure**: The note owner only discloses what is necessary (proof and nullifier), keeping all other data confidential.
 * **Lightweight Frontend**: Uses Vite for fast initial loading times.
-* **Fast Tally Reads**: Observable states fetch tallies instantly from local indexing databases.
+* **Fast State Reads**: Observable states fetch note records instantly from local indexing databases.
 
 ---
 
 ## 15. Future Improvements
 
-* **Multi-Option Polls**: Support dynamic arrays of vote options rather than binary Choices.
-* **Election Deadlines**: Enforce block height limits to restrict when ballots can be submitted.
-* **Admin Dashboard**: Provide tools for organizers to audit nullifiers, configure poll metadata, and review tallies.
-* **Encrypted Tally Reveal**: Encrypt intermediate votes on-chain and decrypt them only when the poll closes.
-* **Delegated Voting**: Securely delegate voting weights using ZK credentials.
+* **Multi-Account Sync**: Sync private keys and notes across multiple browsers using encrypted backups.
+* **Note Categories**: Support tags and folder structures to organize private notes.
+* **Rich Text Editing**: Enable markdown rendering and rich text editing directly in the notes workspace.
+* **Timed Self-Destruction**: Automatically nullify commitments on-chain after a certain block height has passed.
 
 ---
 
@@ -402,13 +361,11 @@ Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for detai
 
 ## 19. Submission Assets
 
-Below is the list of assets submitted for Level 3 evaluation:
+Below is the list of assets submitted for Level 2 evaluation:
 * **GitHub Repository**: [https://github.com/sylvia-barick/midnight.git](https://github.com/sylvia-barick/midnight)
 * **README**: [README.md](file:///Ubuntu-22.04/home/sylvia/midnight/README.md)
 * **Proposal**: [PROPOSAL.md](file:///Ubuntu-22.04/home/sylvia/midnight/PROPOSAL.md)
-* **Live Demo**: [https://midnight-theta-two.vercel.app/](https://midnight-theta-two.vercel.app)
-* **CI/CD Build Screenshot**: `cicd.png` 
+* **Live Demo**: [https://midnight-theta-two.vercel.app/](https://midnight-theta-two.vercel.app/)
+* **CI/CD Build Screenshot**: `cicd.png`
 * **App Screens**:
-  * Home Screen: `banner.png` 
-=======
->>>>>>> d036a44 (modifiedd)
+  * Home Screen: `banner.png`
