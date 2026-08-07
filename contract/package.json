@@ -13,9 +13,9 @@
     }
   },
   "scripts": {
-    "build": "rm -rf dist && tsc --project tsconfig.build.json && cp -Rf ./src/managed ./dist/managed && cp ./src/voting.compact ./dist",
+    "build": "rm -rf dist && tsc --project tsconfig.build.json && cp -Rf ./src/managed ./dist/managed && cp ./src/notes.compact ./dist",
     "ci": "npm run compact && npm run typecheck && npm run lint && npm run build && npm run test",
-    "compact": "compact compile src/voting.compact ./src/managed/voting",
+    "compact": "compact compile src/notes.compact ./src/managed/notes",
     "lint": "eslint src",
     "prepack": "npm build",
     "test": "vitest",

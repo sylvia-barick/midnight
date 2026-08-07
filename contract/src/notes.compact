@@ -1,0 +1,119 @@
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger notes: Map<Bytes<32>, Boolean>;
+export ledger nullifiers: Map<Bytes<32>, Boolean>;
+
+constructor() {
+}
+
+witness localSecretKey(): Bytes<32>;
+
+export circuit createNote(id: Bytes<32>, noteHash: Bytes<32>, salt: Bytes<32>): [] {
+  const sk = localSecretKey();
+  const commitment = persistentHash<Vector<4, Bytes<32>>>([
+    sk,
+    id,
+    noteHash,
+    salt
+  ]);
+  const disclosedCommitment = disclose(commitment);
+  assert(!notes.member(disclosedCommitment), "Note commitment already exists");
+  notes.insert(disclosedCommitment, true);
+}
+
+export circuit readMyNotes(id: Bytes<32>, noteHash: Bytes<32>, salt: Bytes<32>): [] {
+  const sk = localSecretKey();
+  const commitment = persistentHash<Vector<4, Bytes<32>>>([
+    sk,
+    id,
+    noteHash,
+    salt
+  ]);
+  const disclosedCommitment = disclose(commitment);
+  assert(notes.member(disclosedCommitment), "Note does not exist on-chain");
+  
+  const nullifier = persistentHash<Vector<3, Bytes<32>>>([
+    pad(32, "note:nullifier:"),
+    id,
+    sk
+  ]);
+  const disclosedNullifier = disclose(nullifier);
+  assert(!nullifiers.member(disclosedNullifier), "Note has been nullified");
+}
+
+export circuit updateNote(
+  oldId: Bytes<32>, oldNoteHash: Bytes<32>, oldSalt: Bytes<32>,
+  newId: Bytes<32>, newNoteHash: Bytes<32>, newSalt: Bytes<32>
+): [] {
+  const sk = localSecretKey();
+  
+  const oldCommitment = persistentHash<Vector<4, Bytes<32>>>([
+    sk,
+    oldId,
+    oldNoteHash,
+    oldSalt
+  ]);
+  const disclosedOldCommitment = disclose(oldCommitment);
+  assert(notes.member(disclosedOldCommitment), "Old note does not exist on-chain");
+  
+  const nullifier = persistentHash<Vector<3, Bytes<32>>>([
+    pad(32, "note:nullifier:"),
+    oldId,
+    sk
+  ]);
+  const disclosedNullifier = disclose(nullifier);
+  assert(!nullifiers.member(disclosedNullifier), "Old note already updated or deleted");
+  
+  nullifiers.insert(disclosedNullifier, true);
+  
+  const newCommitment = persistentHash<Vector<4, Bytes<32>>>([
+    sk,
+    newId,
+    newNoteHash,
+    newSalt
+  ]);
+  const disclosedNewCommitment = disclose(newCommitment);
+  assert(!notes.member(disclosedNewCommitment), "New note commitment already exists");
+  notes.insert(disclosedNewCommitment, true);
+}
+
+export circuit deleteNote(id: Bytes<32>, noteHash: Bytes<32>, salt: Bytes<32>): [] {
+  const sk = localSecretKey();
+  
+  const commitment = persistentHash<Vector<4, Bytes<32>>>([
+    sk,
+    id,
+    noteHash,
+    salt
+  ]);
+  const disclosedCommitment = disclose(commitment);
+  assert(notes.member(disclosedCommitment), "Note does not exist on-chain");
+  
+  const nullifier = persistentHash<Vector<3, Bytes<32>>>([
+    pad(32, "note:nullifier:"),
+    id,
+    sk
+  ]);
+  const disclosedNullifier = disclose(nullifier);
+  assert(!nullifiers.member(disclosedNullifier), "Note already deleted or updated");
+  
+  nullifiers.insert(disclosedNullifier, true);
+}
+
+export circuit calculateCommitment(sk: Bytes<32>, id: Bytes<32>, noteHash: Bytes<32>, salt: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<4, Bytes<32>>>([sk, id, noteHash, salt]);
+}
+
+export circuit calculateNullifier(id: Bytes<32>, sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<3, Bytes<32>>>([
+    pad(32, "note:nullifier:"),
+    id,
+    sk
+  ]);
+}
+
+export circuit calculateNoteHash(titleHash: Bytes<32>, contentHash: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([titleHash, contentHash]);
+}
