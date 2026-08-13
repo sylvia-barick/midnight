@@ -12,9 +12,9 @@ Welcome to **Secret Notes**, a premium, production-grade, privacy-preserving pri
 ---
 
 ## Live Demo & Resources
+- **Demo Video**: [https://drive.google.com/drive/folders/1VdZkEbYkubP3RYzzeJVh_Utx4k1CCuij?usp=sharing](https://drive.google.com/drive/folders/1VdZkEbYkubP3RYzzeJVh_Utx4k1CCuij?usp=sharing)
 - **Live Demo URL**: [https://midnight-theta-two.vercel.app/](https://midnight-theta-two.vercel.app/)
 - **GitHub Repository**: [https://github.com/sylvia-barick/midnight](https://github.com/sylvia-barick/midnight)
-- **Demo Video / Walkthrough**: [https://drive.google.com/drive/folders/1VdZkEbYkubP3RYzzeJVh_Utx4k1CCuij?usp=sharing](https://drive.google.com/drive/folders/1VdZkEbYkubP3RYzzeJVh_Utx4k1CCuij?usp=sharing)
 
 ---
 
